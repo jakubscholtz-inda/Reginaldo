@@ -1,0 +1,5 @@
+langchain
+uuid
+pymongo
+cryptography
+streamlit_antd_components
