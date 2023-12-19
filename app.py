@@ -132,6 +132,7 @@ if 'open' not in st.session_state:
 
 @st.cache_data(show_spinner=st.session_state['text_fields']['validation_jobtitle'],ttl=600)
 def validate_job(job):
+	return True
 	huggingfacehub_api_token = os.environ['huggingface_token']
 	llm = HuggingFaceHub(huggingfacehub_api_token=huggingfacehub_api_token,
 					   repo_id=os.environ['job_checker_name'],
@@ -222,37 +223,37 @@ def generate_after_changed_inputs():
 	st.session_state['response_text'] = None
 	start = timer()
 	
-	#try:
-	if not validate_job(st.session_state['job_title'].lower()):
-		st.session_state['jobtitle_valid'] = False
-		st.info(f"{st.session_state['text_fields']['not_sure_if']} '{st.session_state['job_title'].capitalize()}' {st.session_state['text_fields']['is_a_job']}")
-	st.session_state['jobtitle_valid'] = True
-	st.session_state['client'] = load_model()
-	st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
-														st.session_state['lang'])
-	
-	st.session_state['generated_questions_parsed'] = clean_text(st.session_state['generated_info']['content'])
-	
-	end = timer()
-	st.session_state['timing'] = end-start
-	#except ValueError as exc:
-	#	st.session_state['generated_info'] = None
-	#	st.session_state['generated_questions_parsed'] = [""]
-	#	st.error(st.session_state['text_fields']['server_busy'])
-	#	end = timer()
-	#	st.session_state['timing'] = end-start
-	#	log = generate_log("Error", f"The HuggingFace server gave us ValueError: {exc}", st.session_state, exception=exc.args)
-	#	send_log(log)
-	#	st.session_state['open'] = False
-	#except Exception as exc:
-	#	st.session_state['generated_info'] = None
-	#	st.session_state['generated_questions_parsed'] = [""]
-	#	st.error(st.session_state['text_fields']['server_busy'])
-	#	end = timer()
-	#	st.session_state['timing'] = end-start
-	#	log = generate_log("Error", f"Generic error associated with HugginsFaceHub {exc}", st.session_state, exception=exc.args)
-	#	send_log(log)
-	#	st.session_state['open'] = False
+	try:
+		if not validate_job(st.session_state['job_title'].lower()):
+			st.session_state['jobtitle_valid'] = False
+			st.info(f"{st.session_state['text_fields']['not_sure_if']} '{st.session_state['job_title'].capitalize()}' {st.session_state['text_fields']['is_a_job']}")
+		st.session_state['jobtitle_valid'] = True
+		st.session_state['client'] = load_model()
+		st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
+															st.session_state['lang'])
+		
+		st.session_state['generated_questions_parsed'] = clean_text(st.session_state['generated_info']['content'])
+		
+		end = timer()
+		st.session_state['timing'] = end-start
+	except ValueError as exc:
+		st.session_state['generated_info'] = None
+		st.session_state['generated_questions_parsed'] = [""]
+		st.error(st.session_state['text_fields']['server_busy'])
+		end = timer()
+		st.session_state['timing'] = end-start
+		log = generate_log("Error", f"The HuggingFace server gave us ValueError: {exc}", st.session_state, exception=exc.args)
+		send_log(log)
+		st.session_state['open'] = False
+	except Exception as exc:
+		st.session_state['generated_info'] = None
+		st.session_state['generated_questions_parsed'] = [""]
+		st.error(st.session_state['text_fields']['server_busy'])
+		end = timer()
+		st.session_state['timing'] = end-start
+		log = generate_log("Error", f"Generic error associated with HugginsFaceHub {exc}", st.session_state, exception=exc.args)
+		send_log(log)
+		st.session_state['open'] = False
 
 	#st.write(f'Sending an unrated report. It took {end-start:.1f} seconds.')
 	send_report(st.session_state, rated=False)
