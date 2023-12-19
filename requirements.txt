@@ -3,3 +3,4 @@ uuid
 pymongo
 cryptography
 streamlit_antd_components
+openai
