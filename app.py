@@ -133,20 +133,6 @@ if 'open' not in st.session_state:
 @st.cache_data(show_spinner=st.session_state['text_fields']['validation_jobtitle'],ttl=600)
 def validate_job(job):
 	return True
-	huggingfacehub_api_token = os.environ['huggingface_token']
-	llm = HuggingFaceHub(huggingfacehub_api_token=huggingfacehub_api_token,
-					   repo_id=os.environ['job_checker_name'],
-					   model_kwargs={"temperature":1.0, "max_new_tokens":4})
-	template = st.session_state['job_question']
-	prompt = PromptTemplate(template=template, input_variables=["position"])
-	chain = LLMChain(prompt=prompt, llm=llm, verbose=False)
-	ans = chain.run(job)
-	if 'yes' in ans.lower():
-		return True
-	elif 'no' in ans.lower():
-		return False
-	else:
-		return True
 
 
 @st.cache_resource(ttl=3600)

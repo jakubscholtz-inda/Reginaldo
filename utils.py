@@ -62,10 +62,10 @@ def generate_log(level, message, session_state,**kwargs):
           'session_state':{
                 'request_ID': session_state['request_ID'],
 		   		'job_title': session_state['job_title'],
-				#'model': session_state['model'],
+				'model': session_state['model'],
 				'user_id': session_state['user_id'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
-				#'generated_info': session_state['generated_info'],
+				'generated_info': session_state['generated_info'],
                 'query_params': session_state['query_params'],
                 'jobtitle_valid': session_state['jobtitle_valid'],
                 'timing': session_state['timing'],
