@@ -239,6 +239,7 @@ def generate_after_changed_inputs():
 		st.session_state['generated_info'] = None
 		st.session_state['generated_questions_parsed'] = [""]
 		st.error(st.session_state['text_fields']['server_busy'])
+		st.error(exc)
 		end = timer()
 		st.session_state['timing'] = end-start
 		log = generate_log("Error", f"The HuggingFace server gave us ValueError: {exc}", st.session_state, exception=exc.args)
@@ -248,6 +249,7 @@ def generate_after_changed_inputs():
 		st.session_state['generated_info'] = None
 		st.session_state['generated_questions_parsed'] = [""]
 		st.error(st.session_state['text_fields']['server_busy'])
+		st.error(exc)
 		end = timer()
 		st.session_state['timing'] = end-start
 		log = generate_log("Error", f"Generic error associated with HugginsFaceHub {exc}", st.session_state, exception=exc.args)
