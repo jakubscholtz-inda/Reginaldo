@@ -4,7 +4,6 @@ from langchain.llms import HuggingFaceHub
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
-from huggingface_hub import InferenceClient
 import openai
 
 import random
