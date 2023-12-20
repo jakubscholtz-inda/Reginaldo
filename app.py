@@ -266,7 +266,8 @@ def get_questions(job_title, skills, description, lang, counter):
 	user_prompt = user_prompt.replace("{position}",job_title)	
 	user_prompt = user_prompt.replace("{skills}",st.session_state['model'][skill_cases[st.session_state['skill_types']]])
 	if st.session_state['job_description'] != '':
-		user_prompt = user_prompt.replace("{description}",st.session_state['model']['job_description']+st.session_state['job_description']+'\n')
+		prepared = st.session_state['model']['job_description'].replace("{details}",st.session_state['job_description'])
+		user_prompt = user_prompt.replace("{description}",prepared)
 	else:
 		user_prompt = user_prompt.replace("{description}","")
 	
@@ -367,9 +368,8 @@ def rated(which_one):
         else:
             other = 'on_up_'+which_one[-2:] 
         st.session_state[other] = False
+    send_report(st.session_state, rated=True)
 	
-    #init_graphics()
-	#send_rating_log(st.session_state,rating_col) 
 
 def to_color(state):
     if state:

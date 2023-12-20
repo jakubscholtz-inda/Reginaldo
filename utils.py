@@ -27,7 +27,7 @@ def clean_text(text):
     # The last line has more newlines than the rest
     # if yes, it separates the extra new lines and appends them as a new entry
     # this way we can strip the epilogue
-    
+
     structure = [len(line.split('\n')) for line in lines]
     if len(num:=list(set(structure[:-1]))) == 1:
         if structure[0] < structure[-1]:
@@ -49,6 +49,7 @@ def generate_report(session_state):
                 'job_description': session_state['job_description'],
 				'model': session_state['model'],
 				'user_id': session_state['user_id'],
+                'user_name':session_state['user_name'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
 				'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
 				'generated_info': session_state['generated_info'],
@@ -69,24 +70,25 @@ def generate_mini_report(session_state):
                 'job_description': session_state['job_description'],
 				'model': session_state['model'],
 				'user_id': session_state['user_id'],
+                'user_name':session_state['user_name'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
 				'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
 				'generated_questions_parsed': session_state['generated_questions_parsed'],
                 'timing': session_state['timing'],
                 'lang': session_state['lang'],
                 'type':'rating',
-    
-                'on_up_01': session_state['on_up_01'],
-                'on_up_02': session_state['on_up_02'],
-                'on_up_03': session_state['on_up_03'],
-                'on_up_04': session_state['on_up_04'],
-                'on_up_05': session_state['on_up_00'],
-
-                'on_dn_01': session_state['on_dn_01'],
-                'on_dn_01': session_state['on_dn_02'],
-                'on_dn_01': session_state['on_dn_03'],
-                'on_dn_01': session_state['on_dn_04'],
-                'on_dn_01': session_state['on_dn_00']
+                'rating':{
+                    'on_up_01': session_state['on_up_01'],
+                    'on_up_02': session_state['on_up_02'],
+                    'on_up_03': session_state['on_up_03'],
+                    'on_up_04': session_state['on_up_04'],
+                    'on_up_00': session_state['on_up_00'],
+                    'on_dn_01': session_state['on_dn_01'],
+                    'on_dn_02': session_state['on_dn_02'],
+                    'on_dn_03': session_state['on_dn_03'],
+                    'on_dn_04': session_state['on_dn_04'],
+                    'on_dn_00': session_state['on_dn_00']
+                    }
     }
     return report
 
@@ -105,6 +107,7 @@ def generate_log(level, message, session_state,**kwargs):
                 'job_description': session_state['job_description'],
 				'model': session_state['model'],
 				'user_id': session_state['user_id'],
+                'user_name':session_state['user_name'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
 				'generated_info': session_state['generated_info'],
                 'query_params': session_state['query_params'],
@@ -122,10 +125,11 @@ def send_report(session_state, rated):
         with pymongo.MongoClient(os.environ['mongo_login_reg'], uuidRepresentation='standard') as mongoclient:
             if rated:
                 collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_rated']]
+                result = collection.insert_one(generate_mini_report(session_state))
             else:
                 collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_unrated']]
+                result = collection.insert_one(generate_report(session_state))
             
-            result = collection.insert_one(generate_report(session_state))
 
             if result.inserted_id:
                 return str(result.inserted_id)
