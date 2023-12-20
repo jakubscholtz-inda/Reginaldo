@@ -15,7 +15,9 @@
       "not_sure_if": ":sweat_smile:   I am not sure if",
       "is_a_job": "is a job I recognize, but I will try anyway.",
       "default_value": "optional comments",
-      "in_another_language": "Prova in Italiano   :flag-it:"
+      "in_another_language": "Prova in Italiano   :flag-it:",
+      "nature_questions": "Which skills would you like to evaluate?",
+      "job_description":"Job description (optional)"
    },
    "it": {
       "app_title": "AI Generativa: Generatore di domande per colloquio",
@@ -33,7 +35,9 @@
       "not_sure_if": ":sweat_smile:  Non sono sicuro che",
       "is_a_job": "sia un lavoro che riconosco, ma ci proverò comunque.",
       "default_value": "commenti facoltativi",
-      "in_another_language": "Try in English   :flag-gb:/:flag-us:"
+      "in_another_language": "Try in English   :flag-gb:/:flag-us:",
+      "nature_questions": "Quali competenze Lei vorrebbe valutare?",
+      "job_description":"Descrizione del ruolo (facoltativa)"
    },
    "fr": {
       "app_title": "IA générative: générateur de questions d'entretien",
@@ -51,6 +55,8 @@
       "not_sure_if": ":sweat_smile: je ne suis pas sûr si",
       "is_a_job": " est un métier que je reconnais, mais je vais quand même essayer.",
       "default_value": "commentaires facultatifs",
-      "in_another_language": "Prova in Italiano   :flag-it:"
+      "in_another_language": "Prova in Italiano   :flag-it:",
+      "nature_questions": "Quelles sont les compétences que vous souhaitez évaluer ?",
+      "job_description":"Description du profil de l'emploi (facultatif)"
    }
 }

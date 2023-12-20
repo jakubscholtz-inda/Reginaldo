@@ -16,6 +16,22 @@ from utils import generate_log, send_log
 ### At the beginning the app is closed and we need to show the header
 #   later on, the header is shown by the update functions...
 
+skill_options = {
+	'en':['Technical/Hard Skills','Soft Skills','Mixed'],
+ 	'it':['Competenze Tecniche [Hard skills]','Competenze Trasversali [Soft Skills]','Entrambi'],
+ 	'fr':['Compétences Techniques [Hard Skills]','Compétences Non Techniques [Soft Skills]','Tous Les Deux']
+ 		}
+
+skill_cases = {'Technical/Hard Skills':"skills_technical",
+			   'Soft Skills':"skills_soft",
+			   'Mixed':"skills_mix",
+			   'Competenze Tecniche [Hard skills]':"skills_technical",
+			   'Competenze Trasversali [Soft Skills]':"skills_soft",
+			   'Entrambi':"skills_mix",
+			   'Compétences Techniques [Hard Skills]':"skills_technical",
+			   'Compétences Non Techniques [Soft Skills]':"skills_soft",
+			   'Tous Les Deux':"skills_mix"}
+
 st.markdown("""
             <style>
                 div[data-testid="column"]:nth-of-type(2) {
@@ -89,15 +105,16 @@ def lang_changed():
 	#init_graphics()
 	st.session_state['open'] = False
 
+lang_2_index = {'it': 1, 'en': 0, 'fr': 2}
 
 def init_graphics():
 	st.markdown(
     """<style> div[data-testid="column"]:nth-of-type(2){ text-align: end;} </style>""", 
 	unsafe_allow_html=True)
 
-	sac.segmented([sac.SegmentedItem(label='Italiano'),
-			   sac.SegmentedItem(label='Français'),
-			   sac.SegmentedItem(label='English')],
+	sac.segmented([sac.SegmentedItem(label='English'),
+				sac.SegmentedItem(label='Italiano'),
+			   sac.SegmentedItem(label='Français')],
 			   key='segmented',
 			   on_change=lang_changed,
 			   format_func='title',
@@ -107,7 +124,7 @@ def init_graphics():
 			   divider=False,
 			   color='blue',
 			   bg_color='transparent',
-			   index=2)
+			   index=lang_2_index[st.session_state['lang']])
 	
 	st.image('header_bg.svg', width=None, use_column_width='always')
 	st.subheader(st.session_state['text_fields']['app_title'], divider='blue')
@@ -257,8 +274,6 @@ def load_model():
 def get_questions(job_title, skills, description, lang, counter):
 	"""The model name is included so that the caching does not
 	depend only on the job_title."""
-	
-	skill_cases = {'Technical Skills':"skills_technical",'Soft Skills':"skills_soft",'Mixed':"skills_mix"}
 
 	generation_info = {}
 	### make sure you replace the jobtitle.
@@ -382,8 +397,14 @@ def to_color(state):
 with st.form('input_form'):
 	st.text_input(st.session_state['text_fields']['enter_jobtitle'],
 			   value='', key='job_pos', max_chars=50)
-	st.selectbox(label='Nature of the questions', options=['Technical Skills','Soft Skills','Mixed'], key="skill_types")
-	st.text_area(label="Job description (optional)",value="", max_chars=400, key="job_description",height=150)
+	st.selectbox(label=st.session_state['text_fields']['nature_questions'],
+			  options=skill_options[st.session_state['lang']],
+			  key="skill_types")
+	st.text_area(label=st.session_state['text_fields']['job_description'],
+			  value="",
+			  max_chars=400,
+			  key="job_description",
+			  height=150)
 	st.form_submit_button(st.session_state['text_fields']['generate_questions'],
 					   on_click=job_title_changed, type='primary')
 st.write("")
