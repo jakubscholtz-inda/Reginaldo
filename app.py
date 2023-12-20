@@ -166,7 +166,7 @@ if 'initialized' not in st.session_state:
 	st.session_state['query_params'] = (query_params := st.experimental_get_query_params())
 
 	check_login()
-	
+
 	if 'id' in query_params:
 		st.session_state['user_id'] = query_params['id'][0]
 	else:
@@ -299,14 +299,21 @@ def generate_after_changed_inputs():
 			st.session_state['jobtitle_valid'] = False
 			st.info(f"{st.session_state['text_fields']['not_sure_if']} '{st.session_state['job_title'].capitalize()}' {st.session_state['text_fields']['is_a_job']}")
 		st.session_state['jobtitle_valid'] = True
-		st.session_state['client'] = load_model()
-		st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
+		if st.session_state['unlocked']:
+
+			st.session_state['client'] = load_model()
+			st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
 													 		st.session_state['skill_types'],
 													 		st.session_state['job_description'],
 															st.session_state['lang'],
 															st.session_state['counter'])
 		
-		st.session_state['generated_questions_parsed'] = clean_text(st.session_state['generated_info']['content'])
+			st.session_state['generated_questions_parsed'] = clean_text(st.session_state['generated_info']['content'])
+		else:
+			st.error("Please use the correct login token")
+			st.session_state['generated_info'] = None
+			st.session_state['generated_questions_parsed'] = ''
+
 		
 		end = timer()
 		st.session_state['timing'] = end-start
