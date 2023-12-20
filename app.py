@@ -278,15 +278,20 @@ def get_questions(job_title, skills, description, lang, counter):
 	generation_info = {}
 	### make sure you replace the jobtitle.
 	user_prompt = st.session_state['model']['prompt_user']
+	system_prompt = st.session_state['model']['prompt_system']
+
 	user_prompt = user_prompt.replace("{position}",job_title)	
-	user_prompt = user_prompt.replace("{skills}",st.session_state['model'][skill_cases[st.session_state['skill_types']]])
+	
 	if st.session_state['job_description'] != '':
 		prepared = st.session_state['model']['job_description'].replace("{details}",st.session_state['job_description'])
 		user_prompt = user_prompt.replace("{description}",prepared)
 	else:
 		user_prompt = user_prompt.replace("{description}","")
 	
-	messages = [{"role": "system", "content": st.session_state['model']['prompt_system']},
+	system_prompt = system_prompt.replace("{skills}","")
+	user_prompt = user_prompt.replace("{skills}",st.session_state['model'][skill_cases[st.session_state['skill_types']]])
+	
+	messages = [{"role": "system", "content": system_prompt},
                         {"role": "user",   "content": user_prompt}]
 	
 	generation_info['messages'] = messages
