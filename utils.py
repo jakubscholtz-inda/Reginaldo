@@ -4,10 +4,6 @@ import pymongo
 from bson.binary import UuidRepresentation
 import datetime
 
-### Evaluation representation
-eval_rep = {':star:':1, ':star::star:':2, ':star::star::star:':3,
-			':star::star::star::star:':4, ':star::star::star::star::star:':5, None: None}
-
 
 def acceptable_input(input):
 	return all((x.isalnum() or x.isspace() or x == '_' or x == '-') for x in input)
@@ -24,13 +20,33 @@ def clean_text(text):
          return [""]
     lines = [text[start:end] for start,end in zip(indices[:-1],indices[1:])]
     lines = lines + [text[indices[-1]:]]
-    return list(map(str.rstrip,lines))
+    lines = list(map(str.lstrip,list(map(str.rstrip,lines))))
+
+    ### A conservative piece of code that checks if 
+    # The first four lines have all the same number of new lines
+    # The last line has more newlines than the rest
+    # if yes, it separates the extra new lines and appends them as a new entry
+    # this way we can strip the epilogue
+    
+    structure = [len(line.split('\n')) for line in lines]
+    if len(num:=list(set(structure[:-1]))) == 1:
+        if structure[0] < structure[-1]:
+            mystr = lines[-1]
+            mylist = mystr.split('\n')
+            question5 = "\n".join(mylist[:structure[0]])
+            lines[-1] = question5
+            lines.append("\n".join(mylist[structure[0]:]))
+    return lines
+
+        
 	
 
 def generate_report(session_state):
 
     report = {	'request_ID': session_state['request_ID'],
 		   		'job_title': session_state['job_title'],
+                'skill_types': session_state['skill_types'],
+                'job_description': session_state['job_description'],
 				'model': session_state['model'],
 				'user_id': session_state['user_id'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
@@ -40,15 +56,38 @@ def generate_report(session_state):
                 'timing': session_state['timing'],
                 'query_params': session_state['query_params'],
                 'jobtitle_valid': session_state['jobtitle_valid'],
-                'response_stars': eval_rep[session_state['response_stars']],
                 'lang': session_state['lang'],
                 'type':'report'}
-
-    if session_state['response_text'] != session_state['text_fields']['default_value']:
-        report['response_text'] = session_state['response_text']
-    else:
-        report['response_text'] = None
     
+    return report
+
+def generate_mini_report(session_state):
+
+    report = {	'request_ID': session_state['request_ID'],
+		   		'job_title': session_state['job_title'],
+                'skill_types': session_state['skill_types'],
+                'job_description': session_state['job_description'],
+				'model': session_state['model'],
+				'user_id': session_state['user_id'],
+				'encoded_server_IP': session_state['encoded_server_IP'],
+				'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
+				'generated_questions_parsed': session_state['generated_questions_parsed'],
+                'timing': session_state['timing'],
+                'lang': session_state['lang'],
+                'type':'rating',
+    
+                'on_up_01': session_state['on_up_01'],
+                'on_up_02': session_state['on_up_02'],
+                'on_up_03': session_state['on_up_03'],
+                'on_up_04': session_state['on_up_04'],
+                'on_up_05': session_state['on_up_00'],
+
+                'on_dn_01': session_state['on_dn_01'],
+                'on_dn_01': session_state['on_dn_02'],
+                'on_dn_01': session_state['on_dn_03'],
+                'on_dn_01': session_state['on_dn_04'],
+                'on_dn_01': session_state['on_dn_00']
+    }
     return report
 
 
@@ -62,6 +101,8 @@ def generate_log(level, message, session_state,**kwargs):
           'session_state':{
                 'request_ID': session_state['request_ID'],
 		   		'job_title': session_state['job_title'],
+                'skill_types': session_state['skill_types'],
+                'job_description': session_state['job_description'],
 				'model': session_state['model'],
 				'user_id': session_state['user_id'],
 				'encoded_server_IP': session_state['encoded_server_IP'],
@@ -69,8 +110,6 @@ def generate_log(level, message, session_state,**kwargs):
                 'query_params': session_state['query_params'],
                 'jobtitle_valid': session_state['jobtitle_valid'],
                 'timing': session_state['timing'],
-                'response_stars': eval_rep[session_state['response_stars']],
-                'response_text': session_state['response_text'],
                 'lang': session_state['lang']}
           }
 
