@@ -1,12 +1,64 @@
-import streamlit as st
-import os
-import pymongo
-from bson.binary import UuidRepresentation
-import datetime
-import re
+from cryptography.fernet import Fernet
 from bs4 import BeautifulSoup
-import requests
+
+import streamlit as st
 import html2text
+import requests
+import socket
+import json
+import os
+import re
+
+#######################################################################################################################
+### Init Methods
+
+def init_lang():
+	text_all_languages = json.load(open('languages.json','r'))
+	st.session_state['text_fields'] = text_all_languages[st.session_state['lang']]
+
+def init_models():
+	# Load the model json file
+	with open('model_params.json.crypt', 'rb') as file:
+		enc = file.read()
+	fernet_coder = Fernet(os.environ["fernet_key"].encode('utf-8'))
+	model_params_all = json.loads(fernet_coder.decrypt(enc))
+
+	st.session_state['model'] = model_params_all[st.session_state['lang']]
+	st.session_state['job_question'] = model_params_all['job']
+
+
+#########################################################################################################################
+### Helper functions
+
+def to_color(state):
+    if state:
+        return 'primary'
+    else:
+        return 'secondary'
+
+
+def cycle():
+	st.session_state['counter'] = st.session_state['counter'] + 1
+	st.session_state['counter'] = st.session_state['counter'] % st.session_state['mod']
+
+
+def get_and_store_serverIP():
+    # Get the server IP and encode it
+	st.session_state['server_IP'] = socket.gethostbyname(socket.gethostname())
+	fernet = Fernet(os.environ["fernet_key"].encode('utf-8'))
+	st.session_state['encoded_server_IP'] = fernet.encrypt(st.session_state['server_IP'].encode('utf-8'))
+
+
+def acceptable_input(input):
+	return all((x.isalnum() or x.isspace() or x == '_' or x == '-') for x in input)
+
+
+def render_acceptable(input):
+	return "".join([x for x in input if (x.isalnum() or x.isspace() or x == '_' or x == '-')])
+
+
+#########################################################################################################################
+### Functions associated with downloading job ads
 
 def url_detector(input: str):
     if 'http' in input:
@@ -29,13 +81,8 @@ def url_2_text(url: str):
         insides = [html2text.html2text(str(b)) for b in bs.find_all('div', {'class':'body__text'})]
         return (headers[1:3],insides[1:3])
 
-def acceptable_input(input):
-	return all((x.isalnum() or x.isspace() or x == '_' or x == '-') for x in input)
-
-
-def render_acceptable(input):
-	return "".join([x for x in input if (x.isalnum() or x.isspace() or x == '_' or x == '-')])
-
+#########################################################################################################################
+### Functions associated with postoprocessing
 
 def clean_text(text):
     text = text.rstrip().lstrip().replace('#','')
@@ -70,130 +117,3 @@ def clean_text(text):
             lines[-1] = question5
             lines.append("\n".join(mylist[structure[0]:]))
     return lines  
-	
-
-def generate_report(session_state):
-
-    report = {	'request_ID': session_state['request_ID'],
-		   		'job_title': session_state['job_title'],
-                'skill_types': session_state['skill_types'],
-                'job_description': session_state['job_description'],
-				'model': session_state['model'],
-				'user_id': session_state['user_id'],
-                'user_name':session_state['user_name'],
-				'encoded_server_IP': session_state['encoded_server_IP'],
-				'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
-				'generated_info': session_state['generated_info'],
-                'generated_questions_parsed': session_state['generated_questions_parsed'],
-                'timing': session_state['timing'],
-                'query_params': session_state['query_params'],
-                'jobtitle_valid': session_state['jobtitle_valid'],
-                'lang': session_state['lang'],
-                'type':'report'}
-    
-    return report
-
-def generate_mini_report(session_state):
-
-    report = {	'request_ID': session_state['request_ID'],
-		   		'job_title': session_state['job_title'],
-                'skill_types': session_state['skill_types'],
-                'job_description': session_state['job_description'],
-				'model': session_state['model'],
-				'user_id': session_state['user_id'],
-                'user_name':session_state['user_name'],
-				'encoded_server_IP': session_state['encoded_server_IP'],
-				'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
-				'generated_questions_parsed': session_state['generated_questions_parsed'],
-                'timing': session_state['timing'],
-                'lang': session_state['lang'],
-                'type':'rating',
-                'rating':{
-                    'on_up_00': session_state['on_up_00'],
-                    'on_up_01': session_state['on_up_01'],
-                    'on_up_02': session_state['on_up_02'],
-                    'on_up_03': session_state['on_up_03'],
-                    'on_up_04': session_state['on_up_04'],
-                    'on_up_05': session_state['on_up_05'],
-                    'on_up_06': session_state['on_up_06'],
-                    'on_up_07': session_state['on_up_07'],
-                    'on_up_08': session_state['on_up_08'],
-                    'on_up_09': session_state['on_up_09'],
-                    'on_dn_00': session_state['on_dn_00'],
-                    'on_dn_01': session_state['on_dn_01'],
-                    'on_dn_02': session_state['on_dn_02'],
-                    'on_dn_03': session_state['on_dn_03'],
-                    'on_dn_04': session_state['on_dn_04'],
-                    'on_dn_05': session_state['on_dn_05'],
-                    'on_dn_06': session_state['on_dn_06'],
-                    'on_dn_07': session_state['on_dn_07'],
-                    'on_dn_08': session_state['on_dn_08'],
-                    'on_dn_09': session_state['on_dn_09']
-                    }
-    }
-    return report
-
-
-def generate_log(level, message, session_state,**kwargs):
-    log = {
-          'level':level,
-          'type':'log',
-          'message':message,
-          'datetime': datetime.datetime.now(tz=datetime.timezone.utc),
-          'data': kwargs,
-          'session_state':{
-                'request_ID': session_state['request_ID'],
-		   		'job_title': session_state['job_title'],
-                'skill_types': session_state['skill_types'],
-                'job_description': session_state['job_description'],
-				'model': session_state['model'],
-				'user_id': session_state['user_id'],
-                'user_name':session_state['user_name'],
-				'encoded_server_IP': session_state['encoded_server_IP'],
-				'generated_info': session_state['generated_info'],
-                'query_params': session_state['query_params'],
-                'jobtitle_valid': session_state['jobtitle_valid'],
-                'timing': session_state['timing'],
-                'lang': session_state['lang']}
-          }
-
-    return log
-
-
-def send_report(session_state, rated):
-
-    try:
-        with pymongo.MongoClient(os.environ['mongo_login_reg'], uuidRepresentation='standard') as mongoclient:
-            if rated:
-                collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_rated']]
-                result = collection.insert_one(generate_mini_report(session_state))
-            else:
-                collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_unrated']]
-                result = collection.insert_one(generate_report(session_state))
-            
-
-            if result.inserted_id:
-                return str(result.inserted_id)
-            else:
-                st.toast("Cannot save the report!",icon=':volcano:')
-    except pymongo.errors.PyMongoError as e:
-        st.toast("Cannot save the report!",icon=':volcano:')
-        ## Without mongo we cannot actually send a log...
-         
-
-def send_log(log):
-
-    try:
-        with pymongo.MongoClient(os.environ['mongo_login_reg'], uuidRepresentation='standard') as mongoclient:
-            collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_logging']]
-            
-            result = collection.insert_one(log)
-
-            if result.inserted_id:
-                return str(result.inserted_id)
-            else:
-                st.toast("Cannot save the log!",icon=':volcano:')
-    except pymongo.errors.PyMongoError as e:
-        st.toast("Cannot save the log!",icon=':volcano:')
-        ## Without mongo we cannot actually send a log...
-

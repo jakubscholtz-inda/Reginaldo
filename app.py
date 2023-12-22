@@ -1,21 +1,21 @@
 import streamlit as st
+import streamlit_antd_components as sac
 import openai
 import os
 import uuid
-import json
 from timeit import default_timer as timer
 from cryptography.fernet import Fernet
-import socket
 import pymongo
+import socket
 
+import json
 
-import streamlit_antd_components as sac
+from utils_logging import send_report, generate_log, send_log 
+from utils import clean_text, render_acceptable, url_detector, url_2_text
+from utils import init_lang, init_models, to_color, get_and_store_serverIP, cycle
 
-from utils import send_report, clean_text, render_acceptable
-from utils import generate_log, send_log, url_detector, url_2_text
-
-### At the beginning the app is closed and we need to show the header
-#   later on, the header is shown by the update functions...
+lang_2_index = {'it': 1, 'en': 0, 'fr': 2}
+lang_2_twoletter = { 'Italiano':'it', 'Français':'fr', 'English':'en'}
 
 skill_options = {
 	'en':['Technical/Hard Skills','Soft Skills','Mixed'],
@@ -23,143 +23,28 @@ skill_options = {
  	'fr':['Compétences Techniques [Hard Skills]','Compétences Non Techniques [Soft Skills]','Tous Les Deux']
  		}
 
-skill_cases = {'Technical/Hard Skills':"skills_technical",
-			   'Soft Skills':"skills_soft",
-			   'Mixed':"skills_mix",
-			   'Competenze Tecniche [Hard skills]':"skills_technical",
-			   'Competenze Trasversali [Soft Skills]':"skills_soft",
-			   'Entrambi':"skills_mix",
-			   'Compétences Techniques [Hard Skills]':"skills_technical",
-			   'Compétences Non Techniques [Soft Skills]':"skills_soft",
-			   'Tous Les Deux':"skills_mix"}
+skill_cases = {}
+for key,lang_set in skill_options.items():
+	for key,val in zip(lang_set,["skills_technical","skills_soft","skills_mix"]):
+		skill_cases[key] = val
 
-st.markdown("""
-            <style>
-                div[data-testid="column"]:nth-of-type(2) {
-                    width: fit-content !important;
-                    flex: unset;
-                    position: absolute;
-                    bottom: 0px;
-                    right: 8px;  
-                }
-                div[data-testid="column"]:nth-of-type(2) div[data-testid="stVerticalBlock"] {
-                    flex-direction: row-reverse;
-                    gap: 4px;
-                    transform: scale(.8);
-                    transform-origin: 100%;
-                }
-                div[data-testid="column"]:nth-of-type(2) * {
-                    width: fit-content !important;
-                    flex: unset;
-                }
-            @media (max-width: 640px) {
-                div[data-testid="column"]:nth-of-type(2) {
-                    min-width: calc(100% - 1.5rem);
-                    position: relative !important;
-                    top: unset !important;
-                    right: unset !important;
-                }
-            }
-            </style>
-            """, unsafe_allow_html=True)
 
 def reset_buttons():
-    st.session_state['on_up_00'] = False
-    st.session_state['on_up_01'] = False
-    st.session_state['on_up_02'] = False
-    st.session_state['on_up_03'] = False
-    st.session_state['on_up_04'] = False
-    st.session_state['on_up_05'] = False
-    st.session_state['on_up_06'] = False
-    st.session_state['on_up_07'] = False
-    st.session_state['on_up_08'] = False
-    st.session_state['on_up_09'] = False
+	st.session_state['btn_thup'] = 10*[False]
+	st.session_state['btn_thdn'] = 10*[False]
     
-    st.session_state['on_dn_00'] = False
-    st.session_state['on_dn_01'] = False
-    st.session_state['on_dn_02'] = False
-    st.session_state['on_dn_03'] = False
-    st.session_state['on_dn_04'] = False
-    st.session_state['on_dn_05'] = False
-    st.session_state['on_dn_06'] = False
-    st.session_state['on_dn_07'] = False
-    st.session_state['on_dn_08'] = False
-    st.session_state['on_dn_09'] = False
-    
-def is_rated():
-    a0 = (st.session_state['on_up_00'] or st.session_state['on_dn_00'])
-    a1 = (st.session_state['on_up_01'] or st.session_state['on_dn_01'])
-    a2 = (st.session_state['on_up_02'] or st.session_state['on_dn_02'])
-    a3 = (st.session_state['on_up_03'] or st.session_state['on_dn_03'])
-    a4 = (st.session_state['on_up_04'] or st.session_state['on_dn_04'])
-    a5 = (st.session_state['on_up_05'] or st.session_state['on_dn_05'])
-    a6 = (st.session_state['on_up_06'] or st.session_state['on_dn_06'])
-    a7 = (st.session_state['on_up_07'] or st.session_state['on_dn_07'])
-    a8 = (st.session_state['on_up_08'] or st.session_state['on_dn_08'])
-    a9 = (st.session_state['on_up_09'] or st.session_state['on_dn_09'])
-     
-    return (a0 or a1 or a2 or a3 or a4 or a5 or a6 or a7 or a8 or a9)
-    
-       
-if 'on_up_01' not in st.session_state:
-    reset_buttons()
-
+def not_blank_rating():
+	partial1 = ( True in st.session_state['btn_thup']) 
+	partial2 = ( True in st.session_state['btn_thdn']) 
+	return (partial1 or partial2)
 
 def lang_changed():
-	
-	if st.session_state['segmented'] == 'Italiano':
-		st.session_state['lang'] = 'it'
 
-	if st.session_state['segmented'] == 'Français':
-		st.session_state['lang'] = 'fr'
-
-	if st.session_state['segmented'] == 'English':
-		st.session_state['lang'] = 'en'
-
+	st.session_state['lang'] = lang_2_twoletter[st.session_state['segmented']]
 	init_lang()
 	init_models()
-	#init_graphics()
 	st.session_state['open'] = False
 
-lang_2_index = {'it': 1, 'en': 0, 'fr': 2}
-
-def init_graphics():
-	st.markdown(
-    """<style> div[data-testid="column"]:nth-of-type(2){ text-align: end;} </style>""", 
-	unsafe_allow_html=True)
-
-	sac.segmented([sac.SegmentedItem(label='English'),
-				sac.SegmentedItem(label='Italiano'),
-			   sac.SegmentedItem(label='Français')],
-			   key='segmented',
-			   on_change=lang_changed,
-			   format_func='title',
-			   align='center',
-			   size='sm',
-			   radius='xs',
-			   divider=False,
-			   color='blue',
-			   bg_color='transparent',
-			   index=lang_2_index[st.session_state['lang']])
-	
-	st.image('header_bg.svg', width=None, use_column_width='always')
-	st.subheader(st.session_state['text_fields']['app_title'], divider='blue')
-	st.write("")
-
-def init_lang():
-	text_all_languages = json.load(open('languages.json','r'))
-	st.session_state['text_fields'] = text_all_languages[st.session_state['lang']]
-
-
-def init_models():
-	# Load the model json file
-	with open('model_params.json.crypt', 'rb') as file:
-		enc = file.read()
-	fernet_coder = Fernet(os.environ["fernet_key"].encode('utf-8'))
-	model_params_all = json.loads(fernet_coder.decrypt(enc))
-
-	st.session_state['model'] = model_params_all[st.session_state['lang']]
-	st.session_state['job_question'] = model_params_all['job']
 
 def check_login():
     st.session_state['query_params'] = st.experimental_get_query_params()
@@ -191,50 +76,28 @@ def check_login():
             st.error("Invalid user, I will not be able to connect to the LLM server.\nPlease reach out to Intervieweb for login information.")
 
 if 'initialized' not in st.session_state:
-	
+	# This block initializes the state
+	st.session_state['initialized'] = True
+	reset_buttons()
+	st.session_state['open'] = False
 	st.session_state['counter'] = 0
 	st.session_state['mod'] = 3
-	st.session_state['initialized'] = True
 	st.session_state['jobtitle_valid'] = None
 	st.session_state['query_params'] = (query_params := st.experimental_get_query_params())
 
-	check_login()
-
-	if 'id' in query_params:
-		st.session_state['user_id'] = query_params['id'][0]
-	else:
-		st.session_state['user_id'] = None
-	
 	if 'lang' in query_params:
-		if query_params['lang'][0] == 'it':
-			st.session_state['lang'] = 'it'
-		if query_params['lang'][0] == 'fr':
-			st.session_state['lang'] = 'fr'
+		if query_params['lang'][0] in list(lang_2_index.keys()):
+			st.session_state['lang'] == query_params['lang'][0]
 		else:
 			st.session_state['lang'] = 'en'
 	else:
 		st.session_state['lang'] = 'en'
 
 	init_lang()
+	check_login()
 	init_models()
-
-	# Get the server IP and encode it
-	st.session_state['server_IP'] = socket.gethostbyname(socket.gethostname())
-	fernet = Fernet(os.environ["fernet_key"].encode('utf-8'))
-	st.session_state['encoded_server_IP'] = fernet.encrypt(st.session_state['server_IP'].encode('utf-8'))
+	get_and_store_serverIP()
 	
-init_graphics()
-
-def cycle():
-	st.session_state['counter'] = st.session_state['counter'] + 1
-	st.session_state['counter'] = st.session_state['counter'] % st.session_state['mod']
-
-if 'open' not in st.session_state:
-	st.session_state['open'] = False
-	#init_graphics()
-	
-### Loading utility functions
-
 
 @st.cache_data(show_spinner=st.session_state['text_fields']['validation_jobtitle'],ttl=600)
 def validate_job(job):
@@ -330,107 +193,137 @@ def generate_after_changed_inputs():
 	st.session_state['request_ID'] = uuid.uuid4()	
 	start = timer()
 	
-	try:
-		st.session_state['job_title'] = check_job_5(st.session_state['job_title'])
-		if not validate_job(st.session_state['job_title'].lower()):
-			st.session_state['jobtitle_valid'] = False
-			st.info(f"{st.session_state['text_fields']['not_sure_if']} '{st.session_state['job_title'].capitalize()}' {st.session_state['text_fields']['is_a_job']}")
+	st.session_state['job_title'] = check_job_5(st.session_state['job_title'])
+	if not validate_job(st.session_state['job_title'].lower()):
+		st.session_state['jobtitle_valid'] = False
+	else:
 		st.session_state['jobtitle_valid'] = True
-		if st.session_state['unlocked']:
-
-			st.session_state['client'] = load_model()
-			description_url=url_detector(st.session_state['job_description'])
-			if  description_url is not None:
-				st.toast(f"Leggo {description_url}")
-				## There is a useful URL in the job description. Use the URL to load a job position
-				description = url_2_text(description_url)
-				if description is not None:
-					headers = description[0]
-					cont = description[1]
-					new_descr = '"""' + headers[0] + '\n' + cont[0] + '\n'
-					new_descr += headers[1] + '\n' + cont[1] + '"""'
-					description = new_descr
-				else:
-					description =  st.session_state['job_description']
 		
+	if not st.session_state['unlocked']:
+		st.error("Please use the correct login token")
+		st.session_state['generated_info'] = None
+		st.session_state['generated_questions_parsed'] = ''
+	### If unlocked and happy
+	else:
+
+		### Check if the description is a url, if it is, use it.
+		description_url=url_detector(st.session_state['job_description'])
+		if description_url is None:
+			description = st.session_state['job_description']
+		else:
+			description = url_2_text(description_url)
+			if description is None:
+				description = st.session_state['job_description']
 			else:
-				description =  st.session_state['job_description']
+				headers = description[0]
+				cont = description[1]
+				new_descr = '"""' + headers[0] + '\n' + cont[0] + '\n'
+				new_descr += headers[1] + '\n' + cont[1] + '"""'
+				description = new_descr
+						
+		try:
+			st.session_state['client'] = load_model()
 			
 			st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
-													 		st.session_state['skill_types'],
-													 		description,
+															st.session_state['skill_types'],
+															description,
 															st.session_state['lang'],
 															st.session_state['counter'])
 		
 			st.session_state['generated_questions_parsed'] = clean_text(st.session_state['generated_info']['content'])
-		else:
-			st.error("Please use the correct login token")
-			st.session_state['generated_info'] = None
-			st.session_state['generated_questions_parsed'] = ''
 
+			end = timer()
+			st.session_state['timing'] = end-start
 		
-		end = timer()
-		st.session_state['timing'] = end-start
-	except ValueError as exc:
-		st.session_state['generated_info'] = None
-		st.session_state['generated_questions_parsed'] = [""]
-		st.error(st.session_state['text_fields']['server_busy'])
-		end = timer()
-		st.session_state['timing'] = end-start
-		log = generate_log("Error", f"The HuggingFace server gave us ValueError: {exc}", st.session_state, exception=exc.args)
-		send_log(log)
-		st.session_state['open'] = False
-	except Exception as exc:
-		st.session_state['generated_info'] = None
-		st.session_state['generated_questions_parsed'] = [""]
-		st.error(st.session_state['text_fields']['server_busy'])
-		end = timer()
-		st.session_state['timing'] = end-start
-		log = generate_log("Error", f"Generic error associated with HugginsFaceHub {exc}", st.session_state, exception=exc.args)
-		send_log(log)
-		st.session_state['open'] = False
+		except Exception as exc:
+			st.session_state['generated_info'] = None
+			st.session_state['generated_questions_parsed'] = [""]
+			st.error(st.session_state['text_fields']['server_busy'])
+			end = timer()
+			st.session_state['timing'] = end-start
+			log = generate_log("Error", f"Generic error {exc}", st.session_state, exception=exc.args)
+			send_log(log)
+			st.session_state['open'] = False
 
-	#st.write(f'Sending an unrated report. It took {end-start:.1f} seconds.')
 	send_report(st.session_state, rated=False)
 
 
 def job_title_changed():
 	reset_buttons()
-	#init_graphics()
 	st.session_state['job_title'] = render_acceptable(st.session_state['job_pos']).lower()
 	st.session_state['counter'] = 0
 	generate_after_changed_inputs()
 
 
-def stars_clicked():
+def regenerate_clicked():
 	reset_buttons()
-	#init_graphics()
 	cycle()
 	generate_after_changed_inputs()
 
 
-def rated(which_one):
-	
-    pressed = 'on_'+ which_one
-    if st.session_state[pressed]:
-        st.session_state[pressed] = False
-    if not st.session_state[pressed]:
-        st.session_state[pressed] = True
-        if which_one[:2] == 'up':
-            other = 'on_dn_'+which_one[-2:]
-        else:
-            other = 'on_up_'+which_one[-2:] 
-        st.session_state[other] = False
-    send_report(st.session_state, rated=True)
-	
-
-def to_color(state):
-    if state:
-        return 'primary'
-    else:
-        return 'secondary'  
+def rated(clicked,index):
+	"""Button logic"""
+	if not st.session_state[clicked][index]:
+		if clicked == 'btn_thup':
+			other = 'btn_thdn'
+		else:
+			other = 'btn_thup'
+		st.session_state[clicked][index] = True
+		st.session_state[other][index] = False
+		send_report(st.session_state, rated=True)
+	  
 
 ### The visible parts of the page
+
+st.markdown("""
+            <style>
+                div[data-testid="column"]:nth-of-type(2) {
+                    width: fit-content !important;
+                    flex: unset;
+                    position: absolute;
+                    bottom: 0px;
+                    right: 8px;  
+                }
+                div[data-testid="column"]:nth-of-type(2) div[data-testid="stVerticalBlock"] {
+                    flex-direction: row-reverse;
+                    gap: 4px;
+                    transform: scale(.8);
+                    transform-origin: 100%;
+                }
+                div[data-testid="column"]:nth-of-type(2) * {
+                    width: fit-content !important;
+                    flex: unset;
+                }
+            @media (max-width: 640px) {
+                div[data-testid="column"]:nth-of-type(2) {
+                    min-width: calc(100% - 1.5rem);
+                    position: relative !important;
+                    top: unset !important;
+                    right: unset !important;
+                }
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+st.markdown("""<style> div[data-testid="column"]:nth-of-type(2){ text-align: end;} </style>""",unsafe_allow_html=True)
+
+sac.segmented([sac.SegmentedItem(label='English'),
+			sac.SegmentedItem(label='Italiano'),
+			sac.SegmentedItem(label='Français')],
+			key='segmented',
+			on_change=lang_changed,
+			format_func='title',
+			align='center',
+			size='sm',
+			radius='xs',
+			divider=False,
+			color='blue',
+			bg_color='transparent',
+			index=lang_2_index[st.session_state['lang']])
+
+st.image('header_bg.svg', width=None, use_column_width='always')
+st.subheader(st.session_state['text_fields']['app_title'], divider='blue')
+st.write("")
 
 with st.form('input_form'):
 	st.text_input(st.session_state['text_fields']['enter_jobtitle'],
@@ -454,18 +347,18 @@ if st.session_state['open']:
 		if i > 9:
 			break
 		with st.container():
-			if st.session_state[f'on_up_{i:02d}']:
+			if st.session_state['btn_thup'][i]:
 				st.success(item)
-			elif st.session_state[f'on_dn_{i:02d}']:
+			elif st.session_state['btn_thdn'][i]:
 				st.error(item)
 			else:
 				st.info(item)
 			col1, col2 = st.columns([8,1])
 			with col2:
-				st.button(":thumbsup:",key=f"up_{i:02d}", on_click=rated,args=(f"up_{i:02d}",),type=to_color(st.session_state[f'on_up_{i:02d}']))
-				st.button(":thumbsdown:",key=f"dn_{i:02d}", on_click=rated,args=(f"dn_{i:02d}",),type=to_color(st.session_state[f'on_dn_{i:02d}'])) 
+				st.button(":thumbsup:",  key=f"up_{i:02d}", on_click=rated, args=(f"btn_thup",i,),type=to_color(st.session_state['btn_thup'][i]))
+				st.button(":thumbsdown:",key=f"dn_{i:02d}", on_click=rated, args=(f"btn_thdn",i,),type=to_color(st.session_state['btn_thdn'][i])) 
 	
 	if len(st.session_state['generated_questions_parsed'])>10:
 		st.info(st.session_state['generated_questions_parsed'][5])
 	
-	st.button(st.session_state['text_fields']['submit_regenerate'], on_click=stars_clicked, type='primary')
+	st.button(st.session_state['text_fields']['submit_regenerate'], on_click=regenerate_clicked, type='primary')
