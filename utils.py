@@ -36,7 +36,6 @@ def to_color(state):
     else:
         return 'secondary'
 
-
 def reset_buttons():
 	st.session_state['btn_thup'] = 10*[False]
 	st.session_state['btn_thdn'] = 10*[False]
@@ -74,23 +73,32 @@ def render_acceptable(input):
 def url_detector(input: str):
     if 'http' in input:
         if 'intervieweb.it' in input:
-            return re.search(r'(https?://[^\s]+)', input).group(0)
+            return ('inter',re.search(r'(https?://[^\s]+)', input).group(0))
+        if 'linkedin.com' in input:
+            return ('linkedin',re.search(r'(https?://[^\s]+)', input).group(0))
         else:
             st.toast("We currently support only Inrecruting vacancy parsing.")
         return None
     return None
 
 
-def url_2_text(url: str):
+def url_2_text(linktype: str, url: str):
     HEADERS = {'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
     answer = requests.get(url, headers=HEADERS)
     bs = BeautifulSoup(answer.text, features='html.parser')
-    if len(bs.find_all('h3', {'class':'body__headings'})) != 4:
+    if linktype == 'inter':
+        if len(bs.find_all('h3', {'class':'body__headings'})) != 4:
+            return None
+        else:
+            headers = [a.text for a in bs.find_all('h3', {'class':'body__headings'})]
+            insides = [html2text.html2text(str(b)) for b in bs.find_all('div', {'class':'body__text'})]
+            new_descr = '"""' + headers[1] + '\n' + insides[1] + '\n'
+            new_descr += headers[2] + '\n' + insides[2] + '"""'			
+            return new_descr
+    if linktype == 'linkedin':
         return None
-    else:
-        headers = [a.text for a in bs.find_all('h3', {'class':'body__headings'})]
-        insides = [html2text.html2text(str(b)) for b in bs.find_all('div', {'class':'body__text'})]
-        return (headers[1:3],insides[1:3])
+         
+         
 
 #########################################################################################################################
 ### Functions associated with postoprocessing

@@ -201,16 +201,10 @@ def generate_after_changed_inputs():
 		if description_url is None:
 			description = st.session_state['job_description']
 		else:
-			description = url_2_text(description_url)
+			description = url_2_text(description_url[0],description_url[1])
 			if description is None:
 				description = st.session_state['job_description']
-			else:
-				headers = description[0]
-				cont = description[1]
-				new_descr = '"""' + headers[0] + '\n' + cont[0] + '\n'
-				new_descr += headers[1] + '\n' + cont[1] + '"""'
-				description = new_descr
-						
+				
 		try:
 			st.session_state['client'] = load_model()
 			
