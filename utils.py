@@ -37,6 +37,17 @@ def to_color(state):
         return 'secondary'
 
 
+def reset_buttons():
+	st.session_state['btn_thup'] = 10*[False]
+	st.session_state['btn_thdn'] = 10*[False]
+
+
+def not_blank_rating():
+	partial1 = ( True in st.session_state['btn_thup']) 
+	partial2 = ( True in st.session_state['btn_thdn']) 
+	return (partial1 or partial2)
+
+
 def cycle():
 	st.session_state['counter'] = st.session_state['counter'] + 1
 	st.session_state['counter'] = st.session_state['counter'] % st.session_state['mod']

@@ -13,6 +13,7 @@ import json
 from utils_logging import send_report, generate_log, send_log 
 from utils import clean_text, render_acceptable, url_detector, url_2_text
 from utils import init_lang, init_models, to_color, get_and_store_serverIP, cycle
+from utils import not_blank_rating, reset_buttons
 
 lang_2_index = {'it': 1, 'en': 0, 'fr': 2}
 lang_2_twoletter = { 'Italiano':'it', 'Français':'fr', 'English':'en'}
@@ -28,18 +29,7 @@ for key,lang_set in skill_options.items():
 	for key,val in zip(lang_set,["skills_technical","skills_soft","skills_mix"]):
 		skill_cases[key] = val
 
-
-def reset_buttons():
-	st.session_state['btn_thup'] = 10*[False]
-	st.session_state['btn_thdn'] = 10*[False]
-    
-def not_blank_rating():
-	partial1 = ( True in st.session_state['btn_thup']) 
-	partial2 = ( True in st.session_state['btn_thdn']) 
-	return (partial1 or partial2)
-
 def lang_changed():
-
 	st.session_state['lang'] = lang_2_twoletter[st.session_state['segmented']]
 	init_lang()
 	init_models()
