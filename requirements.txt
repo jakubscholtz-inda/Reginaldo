@@ -4,3 +4,5 @@ pymongo
 cryptography
 streamlit_antd_components
 openai
+html2text
+bs4
