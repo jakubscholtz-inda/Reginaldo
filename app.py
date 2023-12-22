@@ -407,7 +407,7 @@ with st.form('input_form'):
 			  key="skill_types")
 	st.text_area(label=st.session_state['text_fields']['job_description'],
 			  value="",
-			  max_chars=400,
+			  max_chars=1500,
 			  key="job_description",
 			  height=150)
 	st.form_submit_button(st.session_state['text_fields']['generate_questions'],
