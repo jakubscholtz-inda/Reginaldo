@@ -9,11 +9,13 @@ import requests
 import html2text
 
 def url_detector(input: str):
-    if 'intervieweb.it' in input:
-        if 'http' in input:
+    if 'http' in input:
+        if 'intervieweb.it' in input:
             return re.search(r'(https?://[^\s]+)', input).group(0)
-    else:
+        else:
+            st.toast("We currently support only Inrecruting vacancy parsing.")
         return None
+    return None
 
 
 def url_2_text(url: str):

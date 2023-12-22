@@ -342,7 +342,7 @@ def generate_after_changed_inputs():
 			description_url=url_detector(st.session_state['job_description'])
 			if  description_url is not None:
 				st.toast(f"Leggo {description_url}")
-				## There is a usefull URL in the job description. Use the URL to load a job position
+				## There is a useful URL in the job description. Use the URL to load a job position
 				description = url_2_text(description_url)
 				if description is not None:
 					headers = description[0]

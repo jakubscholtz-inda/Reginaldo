@@ -17,7 +17,7 @@
       "default_value": "optional comments",
       "in_another_language": "Prova in Italiano   :flag-it:",
       "nature_questions": "Which skills would you like to evaluate?",
-      "job_description":"Job description (optional)"
+      "job_description":"Job description/url of inrecruiting job ad (optional)"
    },
    "it": {
       "app_title": "AI Generativa: Generatore di domande per colloquio",
@@ -37,7 +37,7 @@
       "default_value": "commenti facoltativi",
       "in_another_language": "Try in English   :flag-gb:/:flag-us:",
       "nature_questions": "Quali competenze Lei vorrebbe valutare?",
-      "job_description":"Descrizione del ruolo (facoltativa)"
+      "job_description":"Descrizione del ruolo/url di annuncio (facoltativa)"
    },
    "fr": {
       "app_title": "IA générative: générateur de questions d'entretien",
