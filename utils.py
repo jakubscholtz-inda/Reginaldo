@@ -3,7 +3,29 @@ import os
 import pymongo
 from bson.binary import UuidRepresentation
 import datetime
+import re
+from bs4 import BeautifulSoup
+import requests
+import html2text
 
+def url_detector(input: str):
+    if 'intervieweb.it' in input:
+        if 'http' in input:
+            return re.search(r'(https?://[^\s]+)', input).group(0)
+    else:
+        return None
+
+
+def url_2_text(url: str):
+    HEADERS = {'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'}
+    answer = requests.get(url, headers=HEADERS)
+    bs = BeautifulSoup(answer.text, features='html.parser')
+    if len(bs.find_all('h3', {'class':'body__headings'})) != 4:
+        return None
+    else:
+        headers = [a.text for a in bs.find_all('h3', {'class':'body__headings'})]
+        insides = [html2text.html2text(str(b)) for b in bs.find_all('div', {'class':'body__text'})]
+        return (headers[1:3],insides[1:3])
 
 def acceptable_input(input):
 	return all((x.isalnum() or x.isspace() or x == '_' or x == '-') for x in input)
@@ -15,11 +37,20 @@ def render_acceptable(input):
 
 def clean_text(text):
     text = text.rstrip().lstrip().replace('#','')
-    indices = [i for i, chr in enumerate(text) if chr in '123456789']
-    if len(indices) == 0:
+    indices = [i for i, chr in enumerate(text) if chr in '1234567890']
+    suitable = [index for index in indices if (text[index+1] == '.') or (text[index+1] == ')')]
+    if len(suitable) == 0:
          return [""]
-    lines = [text[start:end] for start,end in zip(indices[:-1],indices[1:])]
-    lines = lines + [text[indices[-1]:]]
+    
+    for i in range(len(suitable)):
+        if suitable[i] == 0:
+            continue
+        else:
+            if text[suitable[i]-1] in '1234567890':
+                suitable[i] = suitable[i] - 1
+
+    lines = [text[start:end] for start,end in zip(suitable[:-1],suitable[1:])]
+    lines = lines + [text[suitable[-1]:]]
     lines = list(map(str.lstrip,list(map(str.rstrip,lines))))
 
     ### A conservative piece of code that checks if 
@@ -36,9 +67,7 @@ def clean_text(text):
             question5 = "\n".join(mylist[:structure[0]])
             lines[-1] = question5
             lines.append("\n".join(mylist[structure[0]:]))
-    return lines
-
-        
+    return lines  
 	
 
 def generate_report(session_state):
@@ -78,16 +107,26 @@ def generate_mini_report(session_state):
                 'lang': session_state['lang'],
                 'type':'rating',
                 'rating':{
+                    'on_up_00': session_state['on_up_00'],
                     'on_up_01': session_state['on_up_01'],
                     'on_up_02': session_state['on_up_02'],
                     'on_up_03': session_state['on_up_03'],
                     'on_up_04': session_state['on_up_04'],
-                    'on_up_00': session_state['on_up_00'],
+                    'on_up_05': session_state['on_up_05'],
+                    'on_up_06': session_state['on_up_06'],
+                    'on_up_07': session_state['on_up_07'],
+                    'on_up_08': session_state['on_up_08'],
+                    'on_up_09': session_state['on_up_09'],
+                    'on_dn_00': session_state['on_dn_00'],
                     'on_dn_01': session_state['on_dn_01'],
                     'on_dn_02': session_state['on_dn_02'],
                     'on_dn_03': session_state['on_dn_03'],
                     'on_dn_04': session_state['on_dn_04'],
-                    'on_dn_00': session_state['on_dn_00']
+                    'on_dn_05': session_state['on_dn_05'],
+                    'on_dn_06': session_state['on_dn_06'],
+                    'on_dn_07': session_state['on_dn_07'],
+                    'on_dn_08': session_state['on_dn_08'],
+                    'on_dn_09': session_state['on_dn_09']
                     }
     }
     return report

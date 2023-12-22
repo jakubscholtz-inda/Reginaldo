@@ -8,10 +8,11 @@ from cryptography.fernet import Fernet
 import socket
 import pymongo
 
+
 import streamlit_antd_components as sac
 
 from utils import send_report, clean_text, render_acceptable
-from utils import generate_log, send_log
+from utils import generate_log, send_log, url_detector, url_2_text
 
 ### At the beginning the app is closed and we need to show the header
 #   later on, the header is shown by the update functions...
@@ -63,26 +64,41 @@ st.markdown("""
             """, unsafe_allow_html=True)
 
 def reset_buttons():
+    st.session_state['on_up_00'] = False
     st.session_state['on_up_01'] = False
     st.session_state['on_up_02'] = False
     st.session_state['on_up_03'] = False
     st.session_state['on_up_04'] = False
-    st.session_state['on_up_00'] = False
-
+    st.session_state['on_up_05'] = False
+    st.session_state['on_up_06'] = False
+    st.session_state['on_up_07'] = False
+    st.session_state['on_up_08'] = False
+    st.session_state['on_up_09'] = False
+    
+    st.session_state['on_dn_00'] = False
     st.session_state['on_dn_01'] = False
     st.session_state['on_dn_02'] = False
     st.session_state['on_dn_03'] = False
     st.session_state['on_dn_04'] = False
-    st.session_state['on_dn_00'] = False
-
+    st.session_state['on_dn_05'] = False
+    st.session_state['on_dn_06'] = False
+    st.session_state['on_dn_07'] = False
+    st.session_state['on_dn_08'] = False
+    st.session_state['on_dn_09'] = False
+    
 def is_rated():
     a0 = (st.session_state['on_up_00'] or st.session_state['on_dn_00'])
     a1 = (st.session_state['on_up_01'] or st.session_state['on_dn_01'])
     a2 = (st.session_state['on_up_02'] or st.session_state['on_dn_02'])
     a3 = (st.session_state['on_up_03'] or st.session_state['on_dn_03'])
     a4 = (st.session_state['on_up_04'] or st.session_state['on_dn_04'])
+    a5 = (st.session_state['on_up_05'] or st.session_state['on_dn_05'])
+    a6 = (st.session_state['on_up_06'] or st.session_state['on_dn_06'])
+    a7 = (st.session_state['on_up_07'] or st.session_state['on_dn_07'])
+    a8 = (st.session_state['on_up_08'] or st.session_state['on_dn_08'])
+    a9 = (st.session_state['on_up_09'] or st.session_state['on_dn_09'])
      
-    return (a0 or a1 or a2 or a3 or a4)
+    return (a0 or a1 or a2 or a3 or a4 or a5 or a6 or a7 or a8 or a9)
     
        
 if 'on_up_01' not in st.session_state:
@@ -283,7 +299,7 @@ def get_questions(job_title, skills, description, lang, counter):
 	user_prompt = user_prompt.replace("{position}",job_title)	
 	
 	if st.session_state['job_description'] != '':
-		prepared = st.session_state['model']['job_description'].replace("{details}",st.session_state['job_description'])
+		prepared = st.session_state['model']['job_description'].replace("{details}",description)
 		user_prompt = user_prompt.replace("{description}",prepared)
 	else:
 		user_prompt = user_prompt.replace("{description}","")
@@ -323,9 +339,26 @@ def generate_after_changed_inputs():
 		if st.session_state['unlocked']:
 
 			st.session_state['client'] = load_model()
+			description_url=url_detector(st.session_state['job_description'])
+			if  description_url is not None:
+				st.toast(f"Leggo {description_url}")
+				## There is a usefull URL in the job description. Use the URL to load a job position
+				description = url_2_text(description_url)
+				if description is not None:
+					headers = description[0]
+					cont = description[1]
+					new_descr = '"""' + headers[0] + '\n' + cont[0] + '\n'
+					new_descr += headers[1] + '\n' + cont[1] + '"""'
+					description = new_descr
+				else:
+					description =  st.session_state['job_description']
+		
+			else:
+				description =  st.session_state['job_description']
+			
 			st.session_state['generated_info'] = get_questions(st.session_state['job_title'].lower(),
 													 		st.session_state['skill_types'],
-													 		st.session_state['job_description'],
+													 		description,
 															st.session_state['lang'],
 															st.session_state['counter'])
 		
@@ -407,7 +440,7 @@ with st.form('input_form'):
 			  key="skill_types")
 	st.text_area(label=st.session_state['text_fields']['job_description'],
 			  value="",
-			  max_chars=1500,
+			  max_chars=2000,  # about 500 tokens?
 			  key="job_description",
 			  height=150)
 	st.form_submit_button(st.session_state['text_fields']['generate_questions'],
@@ -418,7 +451,7 @@ if st.session_state['open']:
 	st.subheader(f"{st.session_state['text_fields']['questions_for']} {st.session_state['job_title'].capitalize()}:")
 
 	for i,item in enumerate(st.session_state['generated_questions_parsed']):
-		if i > 4:
+		if i > 9:
 			break
 		with st.container():
 			if st.session_state[f'on_up_{i:02d}']:
@@ -432,7 +465,7 @@ if st.session_state['open']:
 				st.button(":thumbsup:",key=f"up_{i:02d}", on_click=rated,args=(f"up_{i:02d}",),type=to_color(st.session_state[f'on_up_{i:02d}']))
 				st.button(":thumbsdown:",key=f"dn_{i:02d}", on_click=rated,args=(f"dn_{i:02d}",),type=to_color(st.session_state[f'on_dn_{i:02d}'])) 
 	
-	if len(st.session_state['generated_questions_parsed'])>5:
+	if len(st.session_state['generated_questions_parsed'])>10:
 		st.info(st.session_state['generated_questions_parsed'][5])
 	
 	st.button(st.session_state['text_fields']['submit_regenerate'], on_click=stars_clicked, type='primary')
