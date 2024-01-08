@@ -21,7 +21,7 @@ lang_2_twoletter = { 'Italiano':'it', 'Français':'fr', 'English':'en'}
 skill_options = {
 	'en':['Technical/Hard Skills','Soft Skills','Mixed'],
  	'it':['Competenze Tecniche [Hard skills]','Competenze Trasversali [Soft Skills]','Entrambi'],
- 	'fr':['Compétences Techniques [Hard Skills]','Compétences Non Techniques [Soft Skills]','Tous Les Deux']
+ 	'fr':['Savoir-faire [Hard Skills]','Savoir-être [Soft Skills]','Les Deux']
  		}
 
 skill_cases = {}
