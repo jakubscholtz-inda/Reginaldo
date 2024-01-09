@@ -7,6 +7,7 @@ from timeit import default_timer as timer
 from cryptography.fernet import Fernet
 import pymongo
 import socket
+import asyncio
 
 import json
 
@@ -255,6 +256,7 @@ def rated(clicked,index):
 		st.session_state[clicked][index] = True
 		st.session_state[other][index] = False
 		send_report(st.session_state, rated=True)
+		
 	  
 
 ### The visible parts of the page

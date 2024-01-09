@@ -3,3 +3,4 @@ notebooks/*
 model_params.json
 poetry.lock
 pyproject.toml
+__pycache__/*

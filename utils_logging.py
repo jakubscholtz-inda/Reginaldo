@@ -75,8 +75,32 @@ def generate_log(level, message, session_state,**kwargs):
 
     return log
 
+@st.cache_resource(show_spinner="Connecting to the database",ttl=600)
+def open_connection():
+    return pymongo.MongoClient(os.environ['mongo_login_reg'], uuidRepresentation='standard')
+    
 
 def send_report(session_state, rated):
+
+    try:
+        mongoclient = open_connection()
+        if rated:
+            collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_rated']]
+            result = collection.insert_one(generate_mini_report(session_state))
+        else:
+            collection = mongoclient[os.environ['mongo_db']][os.environ['mongo_col_unrated']]
+            result = collection.insert_one(generate_report(session_state))
+        
+        if result.inserted_id:
+            return str(result.inserted_id)
+        else:
+            st.toast("Cannot save the report!",icon=':volcano:')
+    except pymongo.errors.PyMongoError as e:
+        st.toast("Cannot save the report!",icon=':volcano:')
+        ## Without mongo we cannot actually send a log...
+
+
+def send_report_old(session_state, rated):
 
     try:
         with pymongo.MongoClient(os.environ['mongo_login_reg'], uuidRepresentation='standard') as mongoclient:
