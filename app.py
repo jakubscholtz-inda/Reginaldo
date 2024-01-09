@@ -16,13 +16,13 @@ from utils import clean_text, render_acceptable, url_detector, url_2_text
 from utils import init_lang, init_models, to_color, get_and_store_serverIP, cycle
 from utils import not_blank_rating, reset_buttons
 
-lang_2_index = {'it': 1, 'en': 0, 'fr': 2}
+lang_2_index = {'en': 0, 'it': 1, 'fr': 2}
 lang_2_twoletter = { 'Italiano':'it', 'Français':'fr', 'English':'en'}
 
 skill_options = {
 	'en':['Technical/Hard Skills','Soft Skills','Mixed'],
- 	'it':['Competenze Tecniche [Hard skills]','Competenze Trasversali [Soft Skills]','Entrambi'],
- 	'fr':['Savoir-faire [Hard Skills]','Savoir-être [Soft Skills]','Les Deux']
+ 	'it':['Competenze Tecniche [Hard skills]','Competenze Trasversali [Soft Skills]','Entrambi [Hard e Soft skills]'],
+ 	'fr':['Savoir-faire [Hard Skills]','Savoir-être [Soft Skills]','Les Deux [Hard et Soft Skills]']
  		}
 
 skill_cases = {}

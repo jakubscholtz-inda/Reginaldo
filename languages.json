@@ -17,7 +17,7 @@
       "default_value": "optional comments",
       "in_another_language": "Prova in Italiano   :flag-it:",
       "nature_questions": "Which skills would you like to evaluate?",
-      "job_description":"Job description/url of inrecruiting job ad (optional)"
+      "job_description":"Job description/url of Inrecruiting job ad (optional)"
    },
    "it": {
       "app_title": "AI Generativa: Generatore di domande per colloquio",
